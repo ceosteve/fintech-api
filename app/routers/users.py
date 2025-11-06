@@ -39,3 +39,6 @@ def get_user(id:str, db:Session=Depends(get_db)):
     return user
 
 
+@router.put("/update/{id}", status_code=status.HTTP_200_OK, response_model=users_schemas.UserOut)
+def update_user(id:str, db:Session=Depends(get_db)):
+    pass
