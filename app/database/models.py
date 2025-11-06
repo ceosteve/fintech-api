@@ -1,8 +1,9 @@
+
 import shortuuid
 import enum
 import uuid
 from app.database.database import Base
-from sqlalchemy import Column, String, Date, VARCHAR, Enum, Boolean, TIMESTAMP, ForeignKey, Numeric, text
+from sqlalchemy import Column, String, Date, VARCHAR, Enum, Boolean, TIMESTAMP, ForeignKey, Numeric, text, Integer, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql.expression import text
 from sqlalchemy.orm import relationship
@@ -49,7 +50,7 @@ class Users(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
 
     wallets = relationship("Wallets", back_populates="user")
-
+    tokens=relationship("RefreshTokens", back_populates="user")
 
 class Wallets(Base):
     __tablename__ = "wallets"
@@ -101,3 +102,12 @@ class LedgerEntries(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
 
     transaction = relationship("Transactions", back_populates="ledger_entries")
+
+class RefreshTokens(Base):
+    __tablename__="refresh_tokens"
+    id= Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True, nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    expires_at= Column(DateTime, nullable=False)
+    hashed_token=Column(String, nullable=False)
+
+    user=relationship("Users", back_populates="tokens")
