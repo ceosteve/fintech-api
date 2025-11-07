@@ -1,5 +1,6 @@
 
 from datetime import date
+from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, EmailStr
 import shortuuid
@@ -28,4 +29,13 @@ class UserResponse(BaseModel):
     last_name: str
     email:EmailStr
     public_id:str
+
+
+class UserUpdate(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    birthday: date
+    gender: Gender
+    password: Optional[str]= None
 
