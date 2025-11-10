@@ -34,11 +34,11 @@ def verify_access_token(token:str, credentials_exception):
         token_data= tokens_schemas.TokenData(id=id)
         return token_data
     except JWTError:
-        credentials_exception
+        raise credentials_exception
+
 
 def generate_raw_refresh_token() -> str:
     return secrets.token_urlsafe(64)
-
 
 ''''make a new record of refresh token in the database'''
 def make_refresh_record(user_id:str, db:Session=Depends(get_db), days:int=settings.refresh_token_expiration_days):
