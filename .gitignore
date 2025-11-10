@@ -1,3 +1,21 @@
 /.env
 * __pycache__
 *.pyc
+
+*.pyo
+*.pyd
+
+# virual environment
+venv/
+.env
+.venv/
+
+# log files
+
+*.log
+logs/
+
+# text files
+*.txt
+
+*.ini
