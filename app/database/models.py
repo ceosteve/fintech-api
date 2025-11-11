@@ -83,6 +83,7 @@ class Transactions(Base):
     receiver_wallet_account_number = Column(BigInteger, ForeignKey("wallets.account_number"), nullable=False)
   
     amount = Column(Numeric(18,2), nullable=False)
+    currency= Column(String(3), nullable=False, server_default="KES")
     type = Column(Enum(TransactionType), nullable=False)
     status = Column(Enum(Status), default=Status.pending, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
