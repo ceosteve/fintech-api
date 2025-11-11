@@ -26,7 +26,7 @@ def create_wallet(wallet_data:wallet_schemas.WalletCreate, db:Session=Depends(ge
     
     if wallet_data.initial_deposit < minimum_deposit:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                             detail="initial is deposit below minimum deposit")
+                             detail="initial deposit is below minimum deposit")
     
     new_wallet = models.Wallets(
     user_id=current_user.id,
