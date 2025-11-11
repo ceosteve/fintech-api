@@ -1,4 +1,5 @@
-from locale import currency
+
+from typing import Dict
 from pydantic import BaseModel
 
 class Deposit(BaseModel):
@@ -21,5 +22,16 @@ class WithdrawalResponse(BaseModel):
 
     class Config:
         from_attributes = True
-        
+
+class Transer(BaseModel):
+    sender_wallet_account_number: int
+    receiver_wallet_account_number: int
+    amount: int
+    type: str
+    currency: str
+
+class TransferOut(BaseModel):
+    message:Dict = {}
+
+
     
