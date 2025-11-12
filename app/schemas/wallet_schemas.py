@@ -7,10 +7,15 @@ class WalletCreate(BaseModel):
 
 
 class WalletsOut(BaseModel):
+    public_id:str
     balance: int
     currency: str
     account_number: int
+    is_active: bool
 
     class Config:
         from_attributes= True
+
+class WalletsFreeze(BaseModel):
+    is_active:bool
 
