@@ -57,10 +57,11 @@ class Wallets(Base):
 
     id = Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True, nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    public_id = Column(String(8), unique=True, nullable=False, default=lambda: shortuuid.uuid()[:8])
     account_number= Column (Integer, default=lambda:random.randint(100000000,999999999), unique=True, nullable=False)
     balance = Column(Numeric(18,2), nullable=True, server_default=text("0.00"))
     currency = Column(VARCHAR(3), nullable=False)
-    is_active = Column (Boolean, server_default=text("False"), nullable = False)
+    is_active = Column (Boolean, server_default=text("True"), nullable = False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
 
     user = relationship("Users", back_populates="wallets")
