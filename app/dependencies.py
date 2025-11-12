@@ -19,3 +19,12 @@ def get_current_user(token:str=Depends(oauth2_scheme),db:Session=Depends(get_db)
     if not user:
         raise credentials_exception
     return user
+
+def require_admin(current_user:models.Users=Depends(get_current_user)):
+    if current_user.role != models.UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail="You do not have permission to perform operation")
+    
+    return current_user
+
+    
