@@ -73,7 +73,7 @@ def withdraw_from_wallet(withdrawal_info:transaction_schemas.Withdrawal,
                           db:Session=Depends(get_db), current_user:str=Depends(get_current_user)):
     
     existing_account = db.query(models.Wallets).filter(models.Wallets.user_id==current_user.id,
-                                                      models.Wallets.account_number==withdrawal_info).first()
+                                                      models.Wallets.account_number==withdrawal_info.account_number).first()
     
     if not existing_account:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
@@ -93,17 +93,31 @@ def withdraw_from_wallet(withdrawal_info:transaction_schemas.Withdrawal,
     existing_account.balance -=withdrawal_info.amount
 
     new_transaction= models.Transactions(
-    sender_wallet_account_number = withdrawal_info.account_number,
-    receiver_wallet_account_number = withdrawal_info.account_number,
-    amount = withdrawal_info.amount,
-    type = withdrawal_info.type,
-    currency = withdrawal_info.currency,
-    status = "completed"
+        sender_wallet_account_number = withdrawal_info.account_number,
+        receiver_wallet_account_number = withdrawal_info.account_number,
+        amount = withdrawal_info.amount,
+        type = withdrawal_info.type,
+        currency = withdrawal_info.currency,
+        status = "completed"
 )
-
     db.add(new_transaction)
+    db.flush()
+
+
+    new_ledger_entry = models.LedgerEntries(
+        transaction_id = new_transaction.id,
+        wallet_id = existing_account.id,
+        entry_type = models.EntryType.debit,
+        amount = withdrawal_info.amount,
+        balance_after =existing_account.balance,
+        currency = withdrawal_info.currency,
+        narration = "cash withdrawal"
+    )
+
+    db.add(new_ledger_entry)
     db.commit()
     db.refresh(new_transaction)
+    db.refresh(new_ledger_entry)
 
 
     return {"message":f"You have successfully withdrawn {withdrawal_info.currency}:{withdrawal_info.amount}, new balance is {withdrawal_info.currency}:{existing_account.balance}"}
@@ -142,20 +156,12 @@ def transfer_to_wallet(transfer_info:transaction_schemas.Transer, db:Session=Dep
     sender_existing_account = next(a for a in accounts if a.account_number==transfer_info.sender_wallet_account_number)
     receiver_existing_account = next(a for a in accounts if a.account_number==transfer_info.receiver_wallet_account_number)
 
-
-    if not sender_existing_account:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
-                            detail=f" account number: {transfer_info.sender_wallet_account_number} does not exist!")
     
-    if  not receiver_existing_account:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
-                            detail=f" account number: {transfer_info.receiver_wallet_account_number} does not exist")
-    
-    if sender_existing_account.is_active==False or receiver_existing_account.is_active== False:
+    if not sender_existing_account.is_active or receiver_existing_account.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                              detail="You cannot transact with an inactive account!")
     
-    if sender_existing_account.currency != transfer_info.currency and receiver_existing_account.currency != transfer_info.currency:
+    if sender_existing_account.currency != transfer_info.currency or receiver_existing_account.currency != transfer_info.currency:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                             detail="You cannot transact with non-matching currencies!")
     
@@ -175,8 +181,36 @@ def transfer_to_wallet(transfer_info:transaction_schemas.Transer, db:Session=Dep
     )
 
     db.add(new_transaction)
+    db.flush()
+
+    new_debit_ledger = models.LedgerEntries(
+        transaction_id = new_transaction.id,
+        wallet_id = sender_existing_account.id,
+        entry_type = models.EntryType.debit,
+        amount = transfer_info.amount,
+        balance_after =sender_existing_account.balance,
+        currency = transfer_info.currency,
+        narration = "cash transfer"
+    )
+
+    db.add(new_debit_ledger)
+
+    new_credit_ledger = models.LedgerEntries(
+        transaction_id = new_transaction.id,
+        wallet_id = receiver_existing_account.id,
+        entry_type = models.EntryType.credit,
+        amount = transfer_info.amount,
+        balance_after =receiver_existing_account.balance,
+        currency = transfer_info.currency,
+        narration = "cash received "
+    )
+
+    db.add(new_credit_ledger)
+
     db.commit()
     db.refresh(new_transaction)
+    db.refresh(new_credit_ledger)
+    db.refresh(new_debit_ledger)
 
     return {"message":{
         "sender_reference":f"{new_transaction.sender_ref}",
