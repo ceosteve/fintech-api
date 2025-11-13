@@ -32,6 +32,9 @@ class Gender(str, enum.Enum):
     Male = "Male"
     Female = "Female"
 
+def generate_transaction_refs():
+    s= shortuuid.ShortUUID(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    return s.encode(uuid.uuid4())[:10]
 
 class Users(Base):
     __tablename__ = "users"
@@ -58,7 +61,7 @@ class Wallets(Base):
     id = Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True, nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     public_id = Column(String(8), unique=True, nullable=False, default=lambda: shortuuid.uuid()[:8])
-    account_number= Column (Integer, default=lambda:random.randint(100000000,999999999), unique=True, nullable=False)
+    account_number= Column (Integer, default=lambda:random.randint(100000000,999999999), unique=True, nullable=False, index=True)
     balance = Column(Numeric(18,2), nullable=True, server_default=text("0.00"))
     currency = Column(VARCHAR(3), nullable=False)
     is_active = Column (Boolean, server_default=text("True"), nullable = False)
@@ -73,11 +76,10 @@ class Transactions(Base):
     __tablename__ = "transactions"
 
     id = Column(UUID(as_uuid=True), default=uuid.uuid4, primary_key=True, nullable=True)
-    reference = Column(String(10), default = shortuuid.ShortUUID(alphabet="ABCDEFGHIJKLMNOPQRDTUVWXYZ").random(length=10),
+    reference = Column(String(10), default = generate_transaction_refs, unique=True, nullable=False)
+    sender_ref = Column(String(10), default = generate_transaction_refs,
                         unique=True, nullable=False)
-    sender_ref = Column(String(10), default = shortuuid.ShortUUID(alphabet="ABCDEFGHIJKLMNOPQRDTUVWXYZ").random(length=10), 
-                        unique=True, nullable=False)
-    receiver_ref = Column(String(10), default = shortuuid.ShortUUID(alphabet="ABCDEFGHIJKLMNOPQRDTUVWXYZ").random(length=10), 
+    receiver_ref = Column(String(10), default = generate_transaction_refs, 
                           unique=True, nullable=False)
 
     sender_wallet_account_number = Column(BigInteger, ForeignKey("wallets.account_number"), nullable=False)
@@ -104,6 +106,7 @@ class LedgerEntries(Base):
     wallet_id = Column(UUID(as_uuid=True), ForeignKey("wallets.id"), nullable=False)
     entry_type = Column(Enum(EntryType), nullable=False)
     amount = Column(Numeric(18,2), nullable=False)
+    balance_after = Column(Numeric(18,2), nullable=False)
     currency = Column(String(3), nullable=False)
     narration = Column(String(200), nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text('now()'), nullable=False)
