@@ -16,6 +16,5 @@ venv/
 logs/
 
 # text files
-*.txt
 
 *.ini
