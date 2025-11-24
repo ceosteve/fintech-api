@@ -1,6 +1,7 @@
 
 
 from fastapi import Depends, HTTPException, status, APIRouter
+from app import dependencies
 from app.database.database import get_db
 from app.dependencies import get_current_user
 from app.schemas import transaction_schemas
@@ -63,8 +64,7 @@ def deposit_to_wallet(deposit_info:transaction_schemas.Deposit, db:Session=Depen
     db.refresh(new_transaction)
     db.refresh(new_ledger_entry)
 
-    return {"message":f"You have successfully deposited {deposit_info.currency} {deposit_info.amount},new balance is {deposit_info.currency}:{existing_account.balance}"}
-
+    return {"message":f"You have successfully deposited {deposit_info.currency}:{deposit_info.amount},new balance is {deposit_info.currency}:{existing_account.balance}"}
 
 
 """withdrawal endpoint """
