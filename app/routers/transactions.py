@@ -186,7 +186,7 @@ def transfer_to_wallet(transfer_info:transaction_schemas.Transer, db:Session=Dep
     receiver_existing_account = next(a for a in accounts if a.account_number==transfer_info.receiver_wallet_account_number)
 
     
-    if not sender_existing_account.is_active or receiver_existing_account.is_active:
+    if  sender_existing_account.is_active== False or receiver_existing_account.is_active == False:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                              detail="You cannot transact with an inactive account!")
     
