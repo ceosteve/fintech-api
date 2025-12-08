@@ -6,6 +6,10 @@ from app.dependencies import get_current_user, require_admin
 from app.schemas import wallet_schemas
 from app.database import models
 from migrations.versions import db8468efba1a_alter_is_active_column_of_wallets_table
+import logging 
+
+logger = logging.getLogger("fintech")
+
 
 router= APIRouter(
     prefix="/wallets",
@@ -39,6 +43,7 @@ def create_wallet(wallet_data:wallet_schemas.WalletCreate, db:Session=Depends(ge
     db.commit()
     db.refresh(new_wallet)
 
+    logger.info(f"user created new wallet with id {new_wallet.public_id}")
     return new_wallet
 
 
@@ -71,6 +76,8 @@ def delete_wallet(id:str, db:Session=Depends(get_db), current_user:models.Users=
     if current_user.role == models.UserRole.admin:
         db.delete(wallet)
         db.commit()
+    
+        logger.info(f"user deleted wallet with id {wallet.public_id}")
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You cannot perform this operation")
     
@@ -93,6 +100,8 @@ def freeze_wallet(id:str, status_update: wallet_schemas.WalletsFreeze, db:Sessio
     data = status_update.dict()
 
     query.update(data, synchronize_session=False)
+
+    logger.info(f"user deactivated wallet with id number {wallet.public_id}")
     db.commit()
     
     return query.first()
@@ -111,6 +120,8 @@ def activate_wallet(id:str, status_update: wallet_schemas.WalletsFreeze, db:Sess
     
     if current_user.role != models.UserRole.admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You cannot perform this operation")
+    
+    logger.error("unauthorized user tried activating a wallet")
     
     data = status_update.dict()
 

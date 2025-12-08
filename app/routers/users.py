@@ -5,6 +5,10 @@ from app.database import models
 from app.database.database import get_db
 from app.schemas import users_schemas
 from app import dependencies, utils
+import logging
+
+
+logger = logging.getLogger("fintech")
 
 router = APIRouter(
     prefix="/users",
@@ -27,6 +31,7 @@ def create_account(user_data:users_schemas.UserCreate, db:Session=Depends(get_db
     db.commit()
     db.refresh(new_user)
 
+    logger.info(" user created an account in the system")
     return new_user
 
 
@@ -35,6 +40,8 @@ def get_user(id:str, db:Session=Depends(get_db)):
     user = db.query(models.Users).filter(models.Users.public_id==id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"user with {id} not found")
+    
+    logger.warning("user tried to access a user id not present in the database")
     
     return user
 
@@ -48,6 +55,8 @@ def update_user(id:str, update_data: users_schemas.UserUpdate, db:Session=Depend
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"user with {id} not found")
     
+    logger.warning("user tried to access a user id not present in the database")
+    
     if current_user.id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                              detail="you have no permission to perform this action!")
@@ -60,6 +69,6 @@ def update_user(id:str, update_data: users_schemas.UserUpdate, db:Session=Depend
     query.update(data, synchronize_session=False)
     db.commit()
 
-    
+    logger.info("user updated their details")
     return query.first()
 

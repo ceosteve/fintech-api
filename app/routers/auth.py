@@ -3,7 +3,7 @@ from pyexpat import model
 import random
 from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-
+import logging
 from sqlalchemy.orm import Session
 from app.authentication.oauth2 import create_access_token, make_refresh_record
 from app.database import models
@@ -11,6 +11,9 @@ from app.database.database import get_db
 from app.utils import verify_password, verify_token
 from app.schemas import tokens_schemas
 
+
+
+logger = logging.getLogger("fintech")
 
 router = APIRouter(
     tags=["login"]
@@ -30,6 +33,8 @@ def login(login_credentials:OAuth2PasswordRequestForm=Depends(), db:Session=Depe
     
     access_token = create_access_token({"user_id": str(user.id), "role":user.role})
     refresh_token = make_refresh_record(db=db, user_id=user.id, days=7)
+
+    logger.info(f"user with {login_credentials.username} logged into the system")
 
     return {"access_token":access_token,
             "token_type":"bearer",

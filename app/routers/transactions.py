@@ -7,6 +7,11 @@ from app.dependencies import get_current_user
 from app.schemas import transaction_schemas
 from sqlalchemy.orm import Session
 from app.database import models
+import logging
+
+
+logger = logging.getLogger("fintech")
+
 
 router = APIRouter(
     prefix="/transactions",
@@ -26,13 +31,19 @@ def deposit_to_wallet(deposit_info:transaction_schemas.Deposit, db:Session=Depen
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                             detail=f"account number: {deposit_info.account_number} does not exist!")
     
+    logger.warning("user tried to access a non existing account")
+    
     if existing_account.currency != deposit_info.currency:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                             detail="You cannot deposit to an account with non-matching currency!")
     
+    logger.error("user tried depositing to a non-matching currency account")
+    
     if existing_account.is_active =="False":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                              detail="You cannot transact with an inactive account!")
+    
+    logging.error("user tried transacting in an inactive account")
     
     existing_account.balance += deposit_info.amount
 
@@ -47,6 +58,8 @@ def deposit_to_wallet(deposit_info:transaction_schemas.Deposit, db:Session=Depen
     db.add(new_transaction)
     db.flush()
 
+    logger.info(f"new transaction with id {new_transaction.id} was created")
+
     new_ledger_entry = models.LedgerEntries(
         transaction_id = new_transaction.id,
         wallet_id = existing_account.id,
@@ -59,6 +72,7 @@ def deposit_to_wallet(deposit_info:transaction_schemas.Deposit, db:Session=Depen
     
     db.add(new_ledger_entry)
 
+    logger.info(f"new ledger entry  with id {new_ledger_entry.id} was created")
 
     db.commit()
     db.refresh(new_transaction)
@@ -79,16 +93,24 @@ def withdraw_from_wallet(withdrawal_info:transaction_schemas.Withdrawal,
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                             detail=f" account number: {withdrawal_info.account_number} does not exist!")
     
+    logging.warning("user tried withdrawing from a non existing account")
+    
     if existing_account.balance < withdrawal_info.amount:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insufficient balance")
+    
+    logging.warning("user tried withdrawing morr than the account balance")
     
     if existing_account.currency != withdrawal_info.currency:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                             detail="You cannot withdraw from an account with non-matching currency!")
     
+    logger.error("user tried withdrawing from a non-matching currency account")
+    
     if existing_account.is_active =="False":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                              detail="You cannot transact with an inactive account!")
+    
+    logging.error("user tried transacting in an inactive account")
 
     existing_account.balance -=withdrawal_info.amount
 
@@ -103,6 +125,7 @@ def withdraw_from_wallet(withdrawal_info:transaction_schemas.Withdrawal,
     db.add(new_transaction)
     db.flush()
 
+    logger.info(f"new transaction with id {new_transaction.id} was created")
 
     new_ledger_entry = models.LedgerEntries(
         transaction_id = new_transaction.id,
@@ -115,6 +138,9 @@ def withdraw_from_wallet(withdrawal_info:transaction_schemas.Withdrawal,
     )
 
     db.add(new_ledger_entry)
+
+    logger.info(f"new ledger entry  with id {new_ledger_entry.id} was created")
+
     db.commit()
     db.refresh(new_transaction)
     db.refresh(new_ledger_entry)
@@ -125,6 +151,7 @@ def withdraw_from_wallet(withdrawal_info:transaction_schemas.Withdrawal,
 
 
 """money transfer endpoint"""
+
 @router.post("/transfer", status_code=status.HTTP_200_OK, response_model=transaction_schemas.TransferOut)
 def transfer_to_wallet(transfer_info:transaction_schemas.Transer, db:Session=Depends(get_db),
                         current_user:str=Depends(get_current_user)):
@@ -135,6 +162,8 @@ def transfer_to_wallet(transfer_info:transaction_schemas.Transer, db:Session=Dep
     if not existing_wallet:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                             detail="user has no digital wallet!")
+    
+    logging.error("user tried transactions with a non existing wallet")
     
     """query for sender and receiver account numbers"""
 
@@ -161,12 +190,18 @@ def transfer_to_wallet(transfer_info:transaction_schemas.Transer, db:Session=Dep
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                              detail="You cannot transact with an inactive account!")
     
+    logger.warning("user tried transacting with an inactive account")
+    
     if sender_existing_account.currency != transfer_info.currency or receiver_existing_account.currency != transfer_info.currency:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                             detail="You cannot transact with non-matching currencies!")
     
+    logger.error("user tried transacting with non-matching currency accounts")
+
     if sender_existing_account.balance < transfer_info.amount:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insufficient balance")
+    
+    logger.error("user tried transfering an amount greater than the account balance")
     
     sender_existing_account.balance -= transfer_info.amount
     receiver_existing_account.balance += transfer_info.amount
@@ -195,6 +230,8 @@ def transfer_to_wallet(transfer_info:transaction_schemas.Transer, db:Session=Dep
 
     db.add(new_debit_ledger)
 
+    logger.info(f"new  debit ledger entry  with id {new_debit_ledger.id} was created")
+
     new_credit_ledger = models.LedgerEntries(
         transaction_id = new_transaction.id,
         wallet_id = receiver_existing_account.id,
@@ -206,6 +243,8 @@ def transfer_to_wallet(transfer_info:transaction_schemas.Transer, db:Session=Dep
     )
 
     db.add(new_credit_ledger)
+
+    logger.info(f"new credit ledger with id {new_credit_ledger.id} was creaeted ")
 
     db.commit()
     db.refresh(new_transaction)
