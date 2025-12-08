@@ -9,6 +9,8 @@ from jose import JWTError,jwt
 from app.core.config import settings
 
 logger = logging.getLogger("fintech")
+
+
 SECRET_KEY =settings.secret_key
 ALGORITHM = settings.algorithm
 
