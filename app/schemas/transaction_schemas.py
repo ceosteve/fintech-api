@@ -33,5 +33,13 @@ class Transer(BaseModel):
 class TransferOut(BaseModel):
     message:Dict = {}
 
+class BalanceResponse(BaseModel):
+    message: str
 
+    class Config:
+        from_attributes = True
+
+
+class BalanceCheck(BaseModel):
+    account_number: int
     
