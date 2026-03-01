@@ -42,6 +42,7 @@ def client(session):
 
     app.dependency_overrides[get_db]=override_get_db
     yield TestClient(app)
+    app.dependency_overrides.clear()
 
 
 """ test_user fixture"""
@@ -52,7 +53,7 @@ def test_user(client):
     "last_name": "Njoroge",
     "email": "steve@gmail.com",
     "birthday":"1996-06-10",
-    "gender":"M",
+    "gender":"Male",
     "role":"customer",
     "password": "password233"
     }
@@ -64,4 +65,22 @@ def test_user(client):
     new_user['password'] = user_info['password']
 
     return new_user
+
+
+"""create access token fixture"""
+@pytest.fixture()
+def customer_token(test_user):
+    return create_access_token(data = {"user_id": test_user['id']})
+
+
+@pytest.fixture
+def authorised_client(client, customer_token):
+    new_client = client.__class__(app=client.app, base_url=client.base_url)
+    new_client.headers={
+        **client.headers, 
+        'Authorization':f"Bearer {customer_token}"
+    }
+
+    return new_client
+
 
