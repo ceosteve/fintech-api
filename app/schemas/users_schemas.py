@@ -17,6 +17,7 @@ class UserCreate(BaseModel):
     password: str
 
 class UserOut(BaseModel):
+    id: UUID
     email: EmailStr
     role: str
 
