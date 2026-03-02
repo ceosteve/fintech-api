@@ -60,11 +60,11 @@ def update_user(id:str, update_data: users_schemas.UserUpdate, db:Session=Depend
     if current_user.id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                              detail="you have no permission to perform this action!")
-
-    if "password" in update_data and update_data["password"]:
-        update_data["password"] = utils.hash_password(update_data["password"])
     
     data = update_data.dict()
+
+    if data.get("password"):
+        data["password"] = utils.hash_password(data["password"])
     
     query.update(data, synchronize_session=False)
     db.commit()

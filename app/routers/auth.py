@@ -21,27 +21,6 @@ router = APIRouter(
     tags=["login"]
 )
 
-# @router.post("/login", status_code=status.HTTP_200_OK, response_model=tokens_schemas.TokenOut)
-# def login(login_credentials:OAuth2PasswordRequestForm=Depends(), db:Session=Depends(get_db)):
-
-#     query= db.query(models.Users).filter(models.Users.email==login_credentials.username)
-#     user= query.first()
-
-#     if not user:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"user does not exist!")
-    
-#     if not verify_password(login_credentials.password,user.password):
-#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    
-#     access_token = create_access_token({"user_id": str(user.id), "role":user.role})
-#     refresh_token = make_refresh_record(db=db, user_id=user.id, days=7)
-
-#     logger.info(f"user with {login_credentials.username} logged into the system")
-
-#     return {"access_token":access_token,
-#             "token_type":"bearer",
-#             "refresh_token":refresh_token}
-
 
 @router.post("/login", status_code=status.HTTP_200_OK, response_model=tokens_schemas.TokenOut)
 def login(login_details:OAuth2PasswordRequestForm=Depends(), db:Session=Depends(get_db)):
